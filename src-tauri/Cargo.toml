@@ -1,6 +1,6 @@
 [package]
 name = "flow_test"
-version = "0.0.1"
+version = "0.0.2"
 description = "flow test"
 authors = ["yxy"]
 license = ""
@@ -18,6 +18,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serial2 = "0.2.16"
 chrono = "0.4"
+lazy_static = "1.4.0" # Check for the latest version on crates.io
 
 
 [features]
