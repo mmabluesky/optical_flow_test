@@ -105,15 +105,23 @@ fn get_serial_data(window: Window, _app_handle: AppHandle) {
 
         let mut guard = SERIAL.lock().unwrap();
         *guard = Some(port.try_clone().unwrap());
-
+        let mut buffer = [0; 1]; // Buffer to read a single byt
+        let mut code = [0; 13]; // Buffer for the main code
         loop {
-            let mut buffer = [0; 1]; // Buffer to read a single byt
+            
+            // for i in 0..code.len() {
+            //     code[i] = 0;
+            // }
+
+            // for i in 0..buffer.len() {
+            //     buffer[i] = 0;
+            // }
+
             match port.read_exact(&mut buffer) {
                 Ok(_) => {
                     // 成功读取数据
                     if buffer[0] == b'w' {
                         // 'w'等于0x77，用于标识数据包的开始
-                        let mut code = [0; 13]; // Buffer for the main code
                         match port.read_exact(&mut code) {
                             Ok(_) => {
                                 println!(
@@ -156,6 +164,7 @@ fn get_serial_data(window: Window, _app_handle: AppHandle) {
             }
             thread::sleep(Duration::from_millis(20));
         }
+
     });
 }
 

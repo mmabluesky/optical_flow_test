@@ -1,0 +1,188 @@
+From abaeff5d051254a6c0a25944ab1d3472f828cd07 Mon Sep 17 00:00:00 2001
+From: ya <xuya.yuan@emdoor.com>
+Date: Mon, 22 Jan 2024 17:46:20 +0800
+Subject: [PATCH] =?UTF-8?q?=E4=BC=98=E5=8C=96=E5=88=B7=E6=96=B0=E9=80=BB?=
+ =?UTF-8?q?=E8=BE=91?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ package.json              |  2 +-
+ src-tauri/Cargo.lock      |  2 +-
+ src-tauri/Cargo.toml      |  2 +-
+ src-tauri/tauri.conf.json |  2 +-
+ src/App.vue               | 56 +++++++++++++++++++++++++++++++--------
+ src/CircularBuffer.js     | 19 +++++++++++++
+ 6 files changed, 68 insertions(+), 15 deletions(-)
+ create mode 100644 src/CircularBuffer.js
+
+diff --git a/package.json b/package.json
+index 5f7cf53..15e88a7 100644
+--- a/package.json
++++ b/package.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "flow_test",
+   "private": true,
+-  "version": "0.0.2",
++  "version": "0.0.4",
+   "type": "module",
+   "scripts": {
+     "dev": "vite",
+diff --git a/src-tauri/Cargo.lock b/src-tauri/Cargo.lock
+index 75a0697..d0a47d9 100644
+--- a/src-tauri/Cargo.lock
++++ b/src-tauri/Cargo.lock
+@@ -702,7 +702,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "flow_test"
+-version = "0.0.2"
++version = "0.0.4"
+ dependencies = [
+  "chrono",
+  "lazy_static",
+diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
+index 900e929..012cca9 100644
+--- a/src-tauri/Cargo.toml
++++ b/src-tauri/Cargo.toml
+@@ -1,6 +1,6 @@
+ [package]
+ name = "flow_test"
+-version = "0.0.2"
++version = "0.0.4"
+ description = "flow test"
+ authors = ["yxy"]
+ license = ""
+diff --git a/src-tauri/tauri.conf.json b/src-tauri/tauri.conf.json
+index cad4070..e16dfdb 100644
+--- a/src-tauri/tauri.conf.json
++++ b/src-tauri/tauri.conf.json
+@@ -7,7 +7,7 @@
+   },
+   "package": {
+     "productName": "flow_test",
+-    "version": "0.0.2"
++    "version": "0.0.4"
+   },
+   "tauri": {
+     "allowlist": {
+diff --git a/src/App.vue b/src/App.vue
+index b0bfeef..1dad797 100644
+--- a/src/App.vue
++++ b/src/App.vue
+@@ -72,6 +72,16 @@ const chartCanvas = ref(null);
+ let optical_flow_coord_x = []  //用于存储光流坐标x
+ let optical_flow_coord_y = []  //用于存储光流坐标y
+ 
++
++let front = 0;
++let rear = -1;
++let count = 0;
++// 初始化队列数组
++// const optical_flow_coord_x = new Array(buffer_size);
++// const optical_flow_coord_y = new Array(buffer_size);
++// let optical_flow_coord_x = new CircularBuffer(buffer_size);
++// let optical_flow_coord_y = new CircularBuffer(buffer_size);
++
+ const serialPorts = ref([]);
+ 
+ const selectedPort = ref(null);
+@@ -203,32 +213,56 @@ onMounted(async () => {
+ 
+ 
+ 
++function enqueue(x, y) {
++  // 如果队列已满，移除最早的数据点
++  if (count >= buffer_size) {
++    dequeue();
++  }
++
++  // 添加新数据点
++  rear = (rear + 1) % buffer_size;
++  optical_flow_coord_x[rear] = x;
++  optical_flow_coord_y[rear] = y;
++  count++;
++}
++
++function dequeue() {
++  // 移除最早的数据点
++  front = (front + 1) % buffer_size;
++  count--;
++}
+ 
+ 
+ function updateChartData(x, y) {
+ 
+   //
+   addToLog(`光流坐标：${x}, ${y}`, 'info');
+-
+-  const newX = x//Math.random() * 1600 - 800; // 举例
+-  const newY = y//Math.random() * 1600 - 800; // 举例
++  const newX = x;
++  const newY = y;
+   addToLog(newX, newY, optical_flow_coord_x.length);
+-  // 如果数据已满，则移除最早的数据点
+   if (optical_flow_coord_x.length >= buffer_size) {
+     optical_flow_coord_x.shift();
+     optical_flow_coord_y.shift();
+   }
+-
+-  // 添加新数据点
+   optical_flow_coord_x.push(newX);
+   optical_flow_coord_y.push(newY);
+-
+-  // 更新图表数据集
+   chart.data.datasets[0].data = optical_flow_coord_x;
+   chart.data.datasets[1].data = optical_flow_coord_y;
+-
+-  // 通知图表更新
+-  chart.update();
++  chart.update('none');
++  requestAnimationFrame(() => chart.render());
++
++  // const newX = x
++  // const newY = y
++  // addToLog(newX, newY, optical_flow_coord_x.length);
++  // if (optical_flow_coord_x.length >= buffer_size) {
++  //   optical_flow_coord_x.shift();
++  //   optical_flow_coord_y.shift();
++  // }
++  // optical_flow_coord_x.push(newX);
++  // optical_flow_coord_y.push(newY);
++  // chart.data.datasets[0].data = optical_flow_coord_x;
++  // chart.data.datasets[1].data = optical_flow_coord_y;
++  // chart.update();
+ }
+ 
+ 
+diff --git a/src/CircularBuffer.js b/src/CircularBuffer.js
+new file mode 100644
+index 0000000..090a401
+--- /dev/null
++++ b/src/CircularBuffer.js
+@@ -0,0 +1,19 @@
++class CircularBuffer {
++    constructor(size) {
++      this.buffer = new Array(size);
++      this.index = 0;
++    }
++  
++    add(x) {
++      this.buffer[this.index] = x;
++      this.index = (this.index + 1) % this.buffer.length;
++    }
++  
++    get() {
++      return this.buffer;
++    }
++  }
++
++
++
++  export { CircularBuffer }; 
+\ No newline at end of file
+-- 
+2.43.0.windows.1
+
