@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "flow_test",
-    "version": "0.0.2"
+    "version": "0.0.4"
   },
   "tauri": {
     "allowlist": {

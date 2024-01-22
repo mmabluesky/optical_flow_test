@@ -72,6 +72,16 @@ const chartCanvas = ref(null);
 let optical_flow_coord_x = []  //用于存储光流坐标x
 let optical_flow_coord_y = []  //用于存储光流坐标y
 
+
+let front = 0;
+let rear = -1;
+let count = 0;
+// 初始化队列数组
+// const optical_flow_coord_x = new Array(buffer_size);
+// const optical_flow_coord_y = new Array(buffer_size);
+// let optical_flow_coord_x = new CircularBuffer(buffer_size);
+// let optical_flow_coord_y = new CircularBuffer(buffer_size);
+
 const serialPorts = ref([]);
 
 const selectedPort = ref(null);
@@ -203,32 +213,56 @@ onMounted(async () => {
 
 
 
+function enqueue(x, y) {
+  // 如果队列已满，移除最早的数据点
+  if (count >= buffer_size) {
+    dequeue();
+  }
+
+  // 添加新数据点
+  rear = (rear + 1) % buffer_size;
+  optical_flow_coord_x[rear] = x;
+  optical_flow_coord_y[rear] = y;
+  count++;
+}
+
+function dequeue() {
+  // 移除最早的数据点
+  front = (front + 1) % buffer_size;
+  count--;
+}
 
 
 function updateChartData(x, y) {
 
   //
   addToLog(`光流坐标：${x}, ${y}`, 'info');
-
-  const newX = x//Math.random() * 1600 - 800; // 举例
-  const newY = y//Math.random() * 1600 - 800; // 举例
+  const newX = x;
+  const newY = y;
   addToLog(newX, newY, optical_flow_coord_x.length);
-  // 如果数据已满，则移除最早的数据点
   if (optical_flow_coord_x.length >= buffer_size) {
     optical_flow_coord_x.shift();
     optical_flow_coord_y.shift();
   }
-
-  // 添加新数据点
   optical_flow_coord_x.push(newX);
   optical_flow_coord_y.push(newY);
-
-  // 更新图表数据集
   chart.data.datasets[0].data = optical_flow_coord_x;
   chart.data.datasets[1].data = optical_flow_coord_y;
+  chart.update('none');
+  requestAnimationFrame(() => chart.render());
 
-  // 通知图表更新
-  chart.update();
+  // const newX = x
+  // const newY = y
+  // addToLog(newX, newY, optical_flow_coord_x.length);
+  // if (optical_flow_coord_x.length >= buffer_size) {
+  //   optical_flow_coord_x.shift();
+  //   optical_flow_coord_y.shift();
+  // }
+  // optical_flow_coord_x.push(newX);
+  // optical_flow_coord_y.push(newY);
+  // chart.data.datasets[0].data = optical_flow_coord_x;
+  // chart.data.datasets[1].data = optical_flow_coord_y;
+  // chart.update();
 }
 
 
