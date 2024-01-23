@@ -219,6 +219,8 @@ function enqueue(x, y) {
     dequeue();
   }
 
+s
+
   // 添加新数据点
   rear = (rear + 1) % buffer_size;
   optical_flow_coord_x[rear] = x;
@@ -233,37 +235,48 @@ function dequeue() {
 }
 
 
+
+let index = 0;
+
 function updateChartData(x, y) {
 
-  //
-  addToLog(`光流坐标：${x}, ${y}`, 'info');
-  const newX = x;
-  const newY = y;
-  addToLog(newX, newY, optical_flow_coord_x.length);
+
+  addToLog(`光流坐标：${x}, ${y} , 缓存：${optical_flow_coord_x.length}`);
   if (optical_flow_coord_x.length >= buffer_size) {
     optical_flow_coord_x.shift();
     optical_flow_coord_y.shift();
   }
-  optical_flow_coord_x.push(newX);
-  optical_flow_coord_y.push(newY);
-  chart.data.datasets[0].data = optical_flow_coord_x;
-  chart.data.datasets[1].data = optical_flow_coord_y;
+
+  optical_flow_coord_x.push(x);
+  optical_flow_coord_y.push(y);
+
+  // 每次添加新的数据点后立即更新图表
+  chart.data.datasets[0].data = [...optical_flow_coord_x];
+  chart.data.datasets[1].data = [...optical_flow_coord_y];
   chart.update('none');
   requestAnimationFrame(() => chart.render());
 
-  // const newX = x
-  // const newY = y
-  // addToLog(newX, newY, optical_flow_coord_x.length);
-  // if (optical_flow_coord_x.length >= buffer_size) {
-  //   optical_flow_coord_x.shift();
-  //   optical_flow_coord_y.shift();
-  // }
-  // optical_flow_coord_x.push(newX);
-  // optical_flow_coord_y.push(newY);
-  // chart.data.datasets[0].data = optical_flow_coord_x;
-  // chart.data.datasets[1].data = optical_flow_coord_y;
-  // chart.update();
 }
+
+
+// function updateChartData(x, y) {
+
+//   // addToLog(`光流坐标：${x}, ${y}`, 'info');
+//   const newX = x;
+//   const newY = y;
+//   addToLog(`光流坐标：${x}, ${y} , 缓存：${optical_flow_coord_x.length}`);
+//   if (optical_flow_coord_x.length >= buffer_size) {
+//     optical_flow_coord_x.shift();
+//     optical_flow_coord_y.shift();
+//   }
+//   optical_flow_coord_x.push(newX);
+//   optical_flow_coord_y.push(newY);
+//   chart.data.datasets[0].data = optical_flow_coord_x;
+//   chart.data.datasets[1].data = optical_flow_coord_y;
+//   chart.update('none');
+//   requestAnimationFrame(() => chart.render());
+
+// }
 
 
 function addToLog(message, type = 'normal') {
